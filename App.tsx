@@ -1,17 +1,31 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import LoginScreen from './screens/LoginScreen';  // Create this screen later
-import HomeScreen from './screens/HomeScreen';    // Create this screen later
+import LoginScreen from './screens/LoginScreen';
+import HomeScreen from './screens/HomeScreen';
+import RegisterScreen from './screens/RegisterScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import ReadMorePage from './screens/ReadMorePage';
+import AdditionalInfoScreen from './screens/AdditionalInfoScreen';
+import SkillsScreen from './screens/SkillsScreen';
+import CareerPathwaysScreen from './screens/CareerPathwaysScreen';
+import HighlightVideoScreen from './screens/HighlightVideoScreen';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="ReadMorePage" component={ReadMorePage} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="AdditionalInfoScreen" component={AdditionalInfoScreen} />
+        <Stack.Screen name="SkillsScreen" component={SkillsScreen} />
+        <Stack.Screen name="CareerPathwaysScreen" component={CareerPathwaysScreen} />
+        <Stack.Screen name="HighlightVideoScreen" component={HighlightVideoScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
