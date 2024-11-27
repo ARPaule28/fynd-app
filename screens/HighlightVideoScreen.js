@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Image } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Platform } from 'react-native';
+import { Video } from 'expo-av';
+import axios from 'axios';  // Import axios
 import * as ImagePicker from 'expo-image-picker';
-import * as VideoThumbnails from 'expo-video-thumbnails';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import * as FileSystem from 'expo-file-system';  // Import to handle file paths
 
-export default function HighlightVideoScreen({ navigation, route }) {
-  const { studentId } = route.params; // Assuming studentId is passed through navigation params
+export default function HighlightVideoScreen({ route }) {
+  const navigation = useNavigation();
+  const { studentId } = route.params || {}; // Safeguard in case `params` is missing
   const [video, setVideo] = useState(null);
-  const [thumbnail, setThumbnail] = useState(null);
+  const videoRef = useRef(null);
 
-  // Function to handle video selection
   const pickVideo = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'We need access to your camera roll to upload videos.');
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Permission Denied', 'You need to allow access to your media library to upload a video.');
       return;
     }
 
@@ -22,20 +24,19 @@ export default function HighlightVideoScreen({ navigation, route }) {
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
       quality: 1,
-      durationLimit: 60, // Set video duration limit to 1 minute
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       setVideo(result.assets[0].uri);
-      generateThumbnail(result.assets[0].uri);
+    } else {
+      Alert.alert('Error', 'Could not select a video. Please try again.');
     }
   };
 
-  // Function to record a video
   const recordVideo = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'We need access to your camera to record a video.');
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Permission Denied', 'You need to allow access to your camera to record a video.');
       return;
     }
 
@@ -43,89 +44,118 @@ export default function HighlightVideoScreen({ navigation, route }) {
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
       quality: 1,
-      durationLimit: 60, // 1-minute limit
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       setVideo(result.assets[0].uri);
-      generateThumbnail(result.assets[0].uri);
+    } else {
+      Alert.alert('Error', 'Could not record a video. Please try again.');
     }
   };
 
-  // Generate a thumbnail for the video
-  const generateThumbnail = async (uri) => {
-    try {
-      const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(uri, {
-        time: 5000,
-      });
-      setThumbnail(thumbUri);
-    } catch (e) {
-      console.warn(e);
+  // Function to resolve file URI if needed
+  const getFile = async (uri) => {
+    if (Platform.OS !== 'web') {  // Only use expo-file-system for native platforms
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (fileInfo.exists) {
+        return fileInfo.uri;
+      }
     }
+    // For web, just return the uri directly
+    return uri;
   };
 
-  // Function to upload the video
-const uploadVideo = async () => {
+  const handleNext = async () => {
     if (!video) {
-      Alert.alert('No Video Selected', 'Please select or record a video first.');
+      Alert.alert('No Video Selected', 'Please select a video before proceeding.');
       return;
     }
-  
-    const formData = new FormData();
-    formData.append('file', {
-      uri: video,
-      name: `highlight_${studentId}.mp4`,
-      type: 'video/mp4',
-    });
-  
-    // Get the token from AsyncStorage
-    const token = await AsyncStorage.getItem('accessToken');
-    if (!token) {
-      Alert.alert('Unauthorized', 'Please log in again.');
-      return;
-    }
-  
+
     try {
-      const response = await axios.post(`http://localhost:3000/students/upload-video-highlight`, formData, {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const formData = new FormData();
+
+      // Get the raw file URI and file info using FileSystem
+      const fileUri = await getFile(video);  // This ensures the URI is resolved correctly
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+
+      if (!fileInfo.exists) {
+        Alert.alert('Error', 'Invalid video file.');
+        return;
+      }
+
+      // Prepare the file object to be uploaded
+      const file = {
+        uri: fileUri,
+        name: 'highlight_video_1.mp4',  // Ensure a valid filename is provided
+        type: 'video/mp4',  // Set MIME type correctly
+      };
+
+      formData.append('file', file);
+
+      // Use axios to send the POST request
+      const response = await axios.post('http://192.168.1.8:3000/students/upload-video-highlight', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'multipart/form-data',  // Set content type for file upload
         },
       });
-  
+
       if (response.data) {
-        Alert.alert('Upload Successful', 'Your highlight video has been uploaded.');
-        navigation.navigate('Home');
+        Alert.alert('Upload Successful', 'Your video has been uploaded successfully!');
+        navigation.navigate('ProfileImageScreen');
+      } else {
+        Alert.alert('Upload Failed', 'Failed to upload video. Please try again.');
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert('Upload Failed', 'There was an error uploading your video.');
+      console.error('Error uploading video:', error);
+      Alert.alert('Error', 'An error occurred while uploading your video. Please try again.');
     }
+  };
+
+  const handlePrevious = () => {
+    navigation.goBack();
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Highlight Video</Text>
-      <Text style={styles.subText}>
-        Create a 30-second to 1-minute video introduction. Say everything you wanted to say to capture the attention of recruiters. 
-        Remember to smile on the camera and pretend you are talking to a close friend.
+      <Text style={styles.title}>Additional Information</Text>
+      <Text style={styles.subtitle}>HIGHLIGHT VIDEO</Text>
+      <View style={styles.videoPlaceholder}>
+        {video ? (
+          <Video
+            ref={videoRef}
+            source={{ uri: video }}
+            style={styles.videoPreview}
+            useNativeControls
+            resizeMode="contain"
+            onError={(error) => console.error('Video Error:', error)}
+          />
+        ) : (
+          <Text style={styles.instructions}>No video selected or recorded</Text>
+        )}
+      </View>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity onPress={pickVideo} style={styles.pickVideoButton}>
+          <Text style={styles.buttonText}>Select Video</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={recordVideo} style={styles.recordVideoButton}>
+          <Text style={styles.buttonText}>Record Video</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.instructions}>
+        Create a 30 seconds to 1-minute video introduction. Say everything you
+        want to capture recruiters' attention. Smile on camera and pretend you
+        are talking to a close friend.
       </Text>
-
-      {thumbnail && (
-        <Image source={{ uri: thumbnail }} style={styles.thumbnail} />
-      )}
-
-      <TouchableOpacity style={styles.button} onPress={pickVideo}>
-        <Text style={styles.buttonText}>Upload Video</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={recordVideo}>
-        <Text style={styles.buttonText}>Record Video</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.submitButton} onPress={uploadVideo}>
-        <Text style={styles.submitButtonText}>Next</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
+          <Text style={styles.buttonText}>PREVIOUS</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.buttonText}>NEXT</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -134,47 +164,87 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f5f5f5',
   },
-  header: {
+  title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  subText: {
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#555',
-  },
-  button: {
-    backgroundColor: '#333',
-    padding: 15,
-    borderRadius: 8,
-    width: '80%',
-    alignItems: 'center',
     marginBottom: 10,
   },
-  buttonText: {
-    color: '#fff',
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ff6f00',
+    marginBottom: 20,
   },
-  thumbnail: {
-    width: 300,
+  videoPlaceholder: {
+    width: '100%',
     height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#d3d3d3',
     borderRadius: 10,
     marginBottom: 20,
   },
-  submitButton: {
-    backgroundColor: '#333',
+  videoPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 20,
+  },
+  pickVideoButton: {
+    flex: 1,
+    marginRight: 10,
+    backgroundColor: '#ff6f00',
     padding: 15,
     borderRadius: 8,
-    width: '80%',
-    alignItems: 'center',
-    marginTop: 20,
   },
-  submitButtonText: {
-    color: '#fff',
+  recordVideoButton: {
+    flex: 1,
+    marginLeft: 10,
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 8,
+  },
+  instructions: {
     fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  previousButton: {
+    flex: 1,
+    marginRight: 10,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ccc',
+    borderRadius: 8,
+  },
+  nextButton: {
+    flex: 1,
+    marginLeft: 10,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ff6f00',
+    borderRadius: 8,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });

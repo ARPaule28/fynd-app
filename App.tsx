@@ -10,6 +10,7 @@ import AdditionalInfoScreen from './screens/AdditionalInfoScreen';
 import SkillsScreen from './screens/SkillsScreen';
 import CareerPathwaysScreen from './screens/CareerPathwaysScreen';
 import HighlightVideoScreen from './screens/HighlightVideoScreen';
+import ProfileImageScreen from './screens/ProfileImageScreen';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +27,7 @@ export default function App() {
         <Stack.Screen name="SkillsScreen" component={SkillsScreen} />
         <Stack.Screen name="CareerPathwaysScreen" component={CareerPathwaysScreen} />
         <Stack.Screen name="HighlightVideoScreen" component={HighlightVideoScreen} />
+        <Stack.Screen name="ProfileImageScreen" component={ProfileImageScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

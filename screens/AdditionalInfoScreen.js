@@ -1,238 +1,231 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import axios from 'axios';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Platform,
+} from 'react-native';
+import RNPickerSelect from 'react-native-picker-select';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker'; // Correct import
 
-export default function AdditionalInfoScreen() {
-  const navigation = useNavigation();
-  const { control, handleSubmit, formState: { errors } } = useForm();
+export default function AdditionalInfoScreen({ navigation }) {
+  // State for all fields
+  const [streetAddress, setStreetAddress] = useState('');
+  const [streetAddressLine2, setStreetAddressLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [sex, setSex] = useState('');
+  const [race, setRace] = useState('');
+  const [interest, setInterests] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const [studentId, setStudentId] = useState(null); // Store studentId from AsyncStorage
-  const [isLoading, setIsLoading] = useState(false); // For disabling the button during submission
+  const handleSubmit = async () => {
+    const accessToken = await AsyncStorage.getItem('accessToken');
+    const studentId = await AsyncStorage.getItem('studentId');
 
-  useEffect(() => {
-    // Fetch the studentId and access token when the component mounts
-    const fetchStudentData = async () => {
-      const token = await AsyncStorage.getItem('accessToken');
-      const id = await AsyncStorage.getItem('studentId'); // Assuming the studentId is stored in AsyncStorage
-
-      if (!token) {
-        Alert.alert('Unauthorized', 'Please log in again.');
-        navigation.navigate('Login'); // Navigate to login if no token is found
-        return;
-      }
-
-      if (!id) {
-        Alert.alert('Error', 'Student ID not found. Please log in again.');
-        navigation.navigate('Login'); // Navigate to login if no studentId is found
-        return;
-      }
-
-      setStudentId(id); // Set studentId
-    };
-
-    fetchStudentData();
-  }, [navigation]);
-
-  const onSubmit = async (data) => {
-    if (!studentId) {
-      Alert.alert('Error', 'Student ID not found. Please log in again.');
+    if (!accessToken || !studentId) {
+      alert('Error retrieving authentication details.');
       return;
     }
 
-    setIsLoading(true);
+    const address = `${streetAddress}, ${streetAddressLine2}, ${city}, ${state}, ${postalCode}`;
+
+    const data = {
+      address,
+      phoneNumber,
+      sex,
+      race,
+      interest,
+      birth_date: birthdate || null, // Set to null if empty
+    };
 
     try {
-      // Combine address fields into one string
-      const fullAddress = `${data.address}, ${data.address_line_2}, ${data.city}, ${data.state}, ${data.zipcode}`;
+      const response = await fetch(`http://192.168.1.8:3000/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(data),
+      });
 
-      // Prepare form data for sending
-      const formData = new FormData();
-      formData.append('address', fullAddress);
-
-      // Add all other form fields (except address-related fields)
-      for (const [key, value] of Object.entries(data)) {
-        if (key !== 'address' && key !== 'address_line_2' && key !== 'city' && key !== 'state' && key !== 'zipcode') {
-          if (value) {
-            formData.append(key, value);
-          }
-        }
-      }
-
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) {
-        Alert.alert('Unauthorized', 'Please log in again.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Send the update request
-      const response = await axios.put(
-        `http://localhost:3000/students/${studentId}`,
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      if (response.data.success) {
-        Alert.alert('Information Updated', 'Your details have been successfully updated!');
-        navigation.navigate('SkillsScreen', { studentId, token }); // Navigate to SkillsScreen after update
+      if (response.ok) {
+        alert('Information updated successfully!');
+        navigation.navigate('SkillsScreen');
       } else {
-        Alert.alert('Update Failed', 'There was an error updating your information.');
+        alert('Failed to update. Please try again.');
       }
     } catch (error) {
-      console.error("Error during API request:", error);
-      Alert.alert('Update Failed', 'There was an error updating your information.');
+      console.error('Error updating student:', error);
+      alert('An error occurred. Please try again later.');
     }
-
-    setIsLoading(false); // Reset loading state
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Additional Information</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Additional Information</Text>
 
-      {/* Address Fields */}
-      <Text style={styles.label}>Address:</Text>
-      <Controller
-        control={control}
-        name="address"
-        defaultValue=""
-        rules={{ required: 'Street address is required' }}
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Street Address"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
+      <Text style={styles.label}>ADDRESS:</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Street Address"
+        value={streetAddress}
+        onChangeText={setStreetAddress}
       />
-      {errors.address && <Text style={styles.errorText}>{errors.address.message}</Text>}
-
-      <Controller
-        control={control}
-        name="address_line_2"
-        defaultValue=""
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Street Address Line 2"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
+      <TextInput
+        style={styles.input}
+        placeholder="Street Address Line 2"
+        value={streetAddressLine2}
+        onChangeText={setStreetAddressLine2}
       />
-
       <View style={styles.row}>
-        <Controller
-          control={control}
-          name="city"
-          defaultValue=""
-          rules={{ required: 'City is required' }}
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              placeholder="City"
-              value={value}
-              onChangeText={onChange}
-            />
-          )}
+        <TextInput
+          style={[styles.input, styles.halfInput]}
+          placeholder="City"
+          value={city}
+          onChangeText={setCity}
         />
-        {errors.city && <Text style={styles.errorText}>{errors.city.message}</Text>}
+        <TextInput
+          style={[styles.input, styles.halfInput]}
+          placeholder="State/Province"
+          value={state}
+          onChangeText={setState}
+        />
+      </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Postal/Zipcode"
+        value={postalCode}
+        onChangeText={setPostalCode}
+        keyboardType="numeric"
+      />
 
-        <Controller
-          control={control}
-          name="state"
-          defaultValue=""
-          rules={{ required: 'State/Province is required' }}
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              placeholder="State/Province"
-              value={value}
-              onChangeText={onChange}
-            />
-          )}
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Phone Number"
+        keyboardType="numeric"
+        value={phoneNumber}
+        onChangeText={(text) => setPhoneNumber(text.replace(/[^0-9]/g, ''))}
+      />
+
+      <Text style={styles.label}>BIRTHDATE:</Text>
+      {Platform.OS === 'web' ? (
+        <TextInput
+          style={styles.input}
+          placeholder="YYYY-MM-DD"
+          value={birthdate}
+          onChangeText={setBirthdate}
         />
-        {errors.state && <Text style={styles.errorText}>{errors.state.message}</Text>}
+      ) : (
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text style={styles.dateText}>
+            {birthdate ? birthdate : 'Select Birthdate'}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) {
+              setBirthdate(selectedDate.toISOString().split('T')[0]); // Format as YYYY-MM-DD
+            }
+          }}
+        />
+      )}
+
+      <View style={styles.dropdownContainer}>
+        <Text style={styles.dropdownLabel}>SEX:</Text>
+        <RNPickerSelect
+          onValueChange={(value) => setSex(value)}
+          items={[
+            { label: 'Male', value: 'Male' },
+            { label: 'Female', value: 'Female' },
+            { label: 'Other', value: 'Other' },
+          ]}
+          placeholder={{ label: 'Select Sex', value: null }}
+          style={{
+            ...pickerSelectStyles,
+            placeholder: {
+              color: '#888',
+            },
+          }}
+        />
       </View>
 
-      <Controller
-        control={control}
-        name="zipcode"
-        defaultValue=""
-        rules={{ required: 'Zipcode is required' }}
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Postal/Zipcode"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
-      {errors.zipcode && <Text style={styles.errorText}>{errors.zipcode.message}</Text>}
+      <View style={styles.dropdownContainer}>
+        <Text style={styles.dropdownLabel}>RACE:</Text>
+        <RNPickerSelect
+          onValueChange={(value) => setRace(value)}
+          items={[
+            { label: 'Asian', value: 'Asian' },
+            { label: 'African', value: 'African' },
+            { label: 'Caucasian', value: 'Caucasian' },
+            { label: 'Hispanic', value: 'Hispanic' },
+            { label: 'Other', value: 'Other' },
+          ]}
+          placeholder={{ label: 'Select Race', value: null }}
+          style={{
+            ...pickerSelectStyles,
+            placeholder: {
+              color: '#888',
+            },
+          }}
+        />
+      </View>
 
-      {/* Phone Number */}
-      <Text style={styles.label}>Phone Number:</Text>
-      <Controller
-        control={control}
-        name="phone"
-        defaultValue=""
-        rules={{ required: 'Phone number is required' }}
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
-      {errors.phone && <Text style={styles.errorText}>{errors.phone.message}</Text>}
-
-      {/* Interests */}
-      <Controller
-        control={control}
-        name="interest"
-        defaultValue=""
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Interest (e.g., music, dancing)"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
+      <TextInput
+        style={styles.textArea}
+        placeholder="Enter your interests, e.g., music, dancing, reading books"
+        value={interest}
+        onChangeText={setInterests}
+        multiline={true}
+        numberOfLines={4}
       />
 
-      {/* Submit Button */}
-      <TouchableOpacity
-        style={styles.submitButton}
-        onPress={handleSubmit(onSubmit)}
-        disabled={isLoading}
-      >
-        <Text style={styles.submitButtonText}>
-          {isLoading ? 'Updating...' : 'Next'}
-        </Text>
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <Text style={styles.buttonText}>NEXT</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 20, backgroundColor: '#f5f5f5' },
-  header: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginVertical: 15 },
-  label: { fontSize: 14, marginBottom: 5, color: '#333' },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
   input: {
-    height: 45,
+    width: '100%',
+    height: 50,
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 8,
@@ -240,15 +233,78 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: '#fff',
   },
-  halfInput: { width: '48%' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  submitButton: {
-    backgroundColor: '#333',
+  dateText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
     paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
   },
-  submitButtonText: { color: '#fff', fontSize: 16 },
-  errorText: { color: 'red', fontSize: 12, marginBottom: 10 },
+  dropdownContainer: {
+    marginBottom: 15,
+    width: '100%',
+  },
+  dropdownLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  halfInput: {
+    width: '48%',
+  },
+  textArea: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    marginBottom: 15,
+    textAlignVertical: 'top',
+  },
+  button: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#ff6f00',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+});
+
+const pickerSelectStyles = StyleSheet.create({
+  inputIOS: {
+    width: '100%',
+    height: 50,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    color: '#333',
+  },
+  inputAndroid: {
+    width: '100%',
+    height: 50,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    backgroundColor: '#fff',
+    color: '#333',
+  },
 });

@@ -1,11 +1,73 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { Video } from 'expo-av';  // Importing Video component from expo-av
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ReadMorePage = ({ route }) => {
-  const { student } = route.params;
+  const { studentId } = route.params; // Get the selected student's ID from route params
   const navigation = useNavigation();
+
+  const [student, setStudent] = useState(null); // State to store student data
+  const [loading, setLoading] = useState(true); // State for loading indicator
+  const [paused, setPaused] = useState(true); // Video playback state
+  const [isFullscreen, setIsFullscreen] = useState(false); // Fullscreen state
+
+  // Fetch student data using studentId
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        const accessToken = await AsyncStorage.getItem('accessToken'); // Get access token from AsyncStorage
+        if (!accessToken) {
+          navigation.navigate('Login'); // Redirect to login if no access token
+          return;
+        }
+
+        const response = await axios.get(`http://192.168.1.8:3000/students/${studentId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        setStudent(response.data); // Set the fetched student data
+      } catch (error) {
+        console.error('Error fetching student data:', error);
+        // Handle error (e.g., navigation to login if authentication fails)
+      } finally {
+        setLoading(false); // Set loading to false after data is fetched
+      }
+    };
+
+    fetchStudentData();
+  }, [studentId, navigation]);
+
+  // Function to toggle play/pause
+  const togglePlayPause = () => {
+    setPaused(!paused);
+  };
+
+  // Function to toggle fullscreen mode
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (!student) {
+    return (
+      <View style={styles.container}>
+        <Text>No student data available</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -36,23 +98,36 @@ const ReadMorePage = ({ route }) => {
           <Text style={styles.infoLabel}>Address: <Text style={styles.infoValue}>{student.address}</Text></Text>
         </View>
 
-        {/* Video Placeholder */}
+        {/* Video Section */}
         <View style={styles.videoPlaceholder}>
-          <Image source={{ uri: 'https://via.placeholder.com/300x150' }} style={styles.videoImage} />
+          {student.video_highlight ? (
+            <TouchableOpacity onPress={togglePlayPause} style={styles.videoContainer}>
+              <Video
+                source={{ uri: student.video_highlight }}   // Replace with video URL
+                style={isFullscreen ? styles.fullscreenVideo : styles.videoImage}
+                useNativeControls={true}  // Show controls for play, pause, etc.
+                resizeMode="contain" // Make the video fit
+                isPaused={paused}   // Set video paused state
+                onPlaybackStatusUpdate={(status) => {
+                  if (status.didJustFinish) {
+                    setPaused(true); // Reset paused state when video ends
+                  }
+                }} // Handle video finish event
+                onError={(e) => console.error('Video playback error:', e)} // Handle errors
+              />
+            </TouchableOpacity>
+          ) : (
+            <Image source={{ uri: 'https://via.placeholder.com/300x150' }} style={styles.videoImage} />
+          )}
         </View>
 
         {/* Bio Section */}
         <Text style={styles.bio}>{student.interest ? student.interest : 'No additional bio available.'}</Text>
-
-        {/* Send Message Button */}
-        <TouchableOpacity style={styles.sendMessageButton}>
-          <Text style={styles.sendMessageText}>SEND MESSAGE</Text>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.footerIcon} />
         </TouchableOpacity>
         <TouchableOpacity>
@@ -148,10 +223,31 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     alignItems: 'center',
   },
-  videoImage: {
+  videoContainer: {
     width: '90%',
     height: 150,
     borderRadius: 10,
+  },
+  videoImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 10,
+  },
+  fullscreenVideo: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 1,
+  },
+  fullscreenButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 10,
+    borderRadius: 50,
   },
   bio: {
     fontSize: 14,
@@ -159,19 +255,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 10,
     lineHeight: 20,
-  },
-  sendMessageButton: {
-    backgroundColor: '#ff6f00',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginVertical: 20,
-  },
-  sendMessageText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   footer: {
     flexDirection: 'row',
@@ -182,8 +265,14 @@ const styles = StyleSheet.create({
     borderTopColor: '#e0e0e0',
   },
   footerIcon: {
-    width: 30,
-    height: 30,
+    width: 24,
+    height: 24,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
 });
 

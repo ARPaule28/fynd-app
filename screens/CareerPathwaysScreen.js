@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 export default function CareerPathwaysScreen() {
   const navigation = useNavigation();
@@ -121,6 +121,7 @@ export default function CareerPathwaysScreen() {
     },
   });
 
+  // Function to toggle options for each career pathway
   const toggleOption = (category, option) => {
     setCareerPathways((prevState) => ({
       ...prevState,
@@ -131,40 +132,69 @@ export default function CareerPathwaysScreen() {
     }));
   };
 
-  const handleDone = async () => {
-    // Check for the student ID and token in AsyncStorage before updating
+  // Handle submit action
+  const handleSubmit = async () => {
     const studentId = await AsyncStorage.getItem('studentId');
-    const token = await AsyncStorage.getItem('accessToken');
-
-    if (!studentId || !token) {
-      alert('Please log in again');
+    const accessToken = await AsyncStorage.getItem('accessToken');
+  
+    if (!studentId || !accessToken) {
+      Alert.alert('Error', 'Please log in again');
       return;
     }
-
-    // Send the updated career pathways data to the backend
-    try {
-      const response = await axios.put(
-        `http://localhost:3000/students/${studentId}`, // Replace with your API endpoint
-        careerPathways,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
+  
+    // Create an object to hold the selected career pathways
+    const selectedCareerPathways = Object.keys(careerPathways).reduce((acc, category) => {
+      const selectedOptions = Object.keys(careerPathways[category]).filter(
+        (option) => careerPathways[category][option]
       );
-
-      if (response.data.success) {
-        // If successful, navigate to the HighlightVideoScreen
-        navigation.navigate('HighlightVideoScreen');
-      } else {
-        alert('Failed to update career pathways, please try again.');
+      if (selectedOptions.length > 0) {
+        // Instead of storing an object, join the selected options into a comma-separated string
+        acc[category] = selectedOptions.join(', ');
       }
+      return acc;
+    }, {});
+  
+    // Convert the selected career pathways into a simple string format, without curly braces
+    const formattedCareerPathways = Object.keys(selectedCareerPathways).map(category => {
+      return `${category}: ${selectedCareerPathways[category]}`;
+    }).join(' | '); // Joining each category's selected options with a separator (you can change ' | ' to any delimiter you prefer)
+  
+    const data = { careers: formattedCareerPathways }; // Use the formatted career pathways string
+  
+    try {
+      const response = await fetch(`http://192.168.1.8:3000/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+  
+      if (response.ok) {
+        const result = await response.json();
+        console.log('API response:', result); // Log the result to check its structure
+  
+        // Assuming the API is not sending a "success" field, we can proceed with navigation directly
+        // Here we assume the response data is valid if the status is ok
+        if (result.id) {  // Check if result contains an ID (indicating success)
+          Alert.alert('Success', 'Career pathways updated successfully!');
+          console.log('Navigating to HomeScreen...');
+          navigation.navigate('HighlightVideoScreen');
+        } else {
+          Alert.alert('Error', 'Failed to update career pathways, please try again.');
+        }
+      } else {
+        const errorResponse = await response.json();
+        console.log('Error response:', errorResponse);  // Log the error response
+        Alert.alert('Error', errorResponse.message || 'Something went wrong.');
+      }      
     } catch (error) {
       console.error('Error updating career pathways:', error);
-      alert('Error updating career pathways');
+      Alert.alert('Error', 'An error occurred while updating career pathways.');
     }
   };
+  
 
   return (
     <ScrollView style={styles.container}>
@@ -174,38 +204,23 @@ export default function CareerPathwaysScreen() {
         <View key={category}>
           <Text style={styles.subtitle}>{category}</Text>
           <View style={styles.skillsContainer}>
-            {Object.keys(careerPathways[category]).map((option, index) =>
-              option !== 'Others' ? (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.skillItem}
-                  onPress={() => toggleOption(category, option)}
-                >
-                  <Text style={styles.skillText}>
-                    {careerPathways[category][option] ? '☑' : '☐'} {option}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <TextInput
-                  key={index}
-                  style={styles.input}
-                  placeholder="Others..."
-                  value={careerPathways[category].Others}
-                  onChangeText={(text) =>
-                    setCareerPathways((prevState) => ({
-                      ...prevState,
-                      [category]: { ...prevState[category], Others: text },
-                    }))
-                  }
-                />
-              )
-            )}
+            {Object.keys(careerPathways[category]).map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.skillItem}
+                onPress={() => toggleOption(category, option)}
+              >
+                <Text style={styles.skillText}>
+                  {careerPathways[category][option] ? '☑' : '☐'} {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       ))}
 
       {/* Done Button */}
-      <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
+      <TouchableOpacity style={styles.doneButton} onPress={handleSubmit}>
         <Text style={styles.doneButtonText}>Next</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -213,10 +228,28 @@ export default function CareerPathwaysScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#f5f5f5' },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  subtitle: { fontSize: 18, fontWeight: '600', marginTop: 15, marginBottom: 10 },
-  skillsContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  skillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
   skillItem: {
     width: '48%',
     paddingVertical: 8,
@@ -227,16 +260,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 8,
   },
-  skillText: { fontSize: 16 },
-  input: {
-    width: '100%',
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 12,
-    backgroundColor: '#fff',
+  skillText: {
+    fontSize: 16,
   },
   doneButton: {
     marginTop: 20,
@@ -245,5 +270,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  doneButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  doneButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

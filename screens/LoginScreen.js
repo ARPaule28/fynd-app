@@ -11,7 +11,7 @@ export default function LoginScreen() {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post('http://localhost:3000/auth/login', {
+      const response = await axios.post('http://192.168.1.8:3000/auth/login', {
         email: data.email,
         password: data.password,
       });

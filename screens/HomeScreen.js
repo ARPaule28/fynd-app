@@ -21,7 +21,7 @@ const HomeScreen = ({ navigation }) => {
         }
 
         // Fetch all students
-        const response = await axios.get('http://localhost:3000/students', {
+        const response = await axios.get('http://192.168.1.8:3000/students', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -29,7 +29,7 @@ const HomeScreen = ({ navigation }) => {
         setStudents(response.data);
 
         // Fetch the current logged-in student info using the studentId
-        const currentStudentResponse = await axios.get(`http://localhost:3000/students/${studentId}`, {
+        const currentStudentResponse = await axios.get(`http://192.168.1.8:3000/students/${studentId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -110,9 +110,9 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.studentName}>{student.name}</Text>
                 <Text style={styles.studentTitle}>{student.title}</Text>
                 <Text style={styles.studentDescription}>
-                  {student.bio ? student.bio : 'No description available.'}
+                  {student.interest ? student.interest : 'No description available.'}
                 </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('ReadMorePage', { student })}>
+                <TouchableOpacity onPress={() => navigation.navigate('ReadMorePage', { studentId: student.id })}>
                   <Text style={styles.readMore}>READ MORE</Text>
                 </TouchableOpacity>
               </View>

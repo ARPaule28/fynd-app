@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SkillsScreen() {
@@ -51,6 +50,63 @@ export default function SkillsScreen() {
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleSubmit = async () => {
+    const accessToken = await AsyncStorage.getItem('accessToken');
+    const studentId = await AsyncStorage.getItem('studentId');
+
+    if (!accessToken || !studentId) {
+      Alert.alert('Error', 'Error retrieving authentication details.');
+      return;
+    }
+
+    // Concatenate all the selected skills into a single string
+    const skillsData = {
+      employabilitySkills: Object.keys(skills.employability)
+        .filter((skill) => skills.employability[skill] && skill !== 'Others')
+        .join(', '),
+      softSkills: Object.keys(skills.soft)
+        .filter((skill) => skills.soft[skill] && skill !== 'Others')
+        .join(', '),
+      technicalSkills: Object.keys(skills.technical)
+        .filter((skill) => skills.technical[skill] && skill !== 'Others')
+        .join(', '),
+      personalSkills: skills.personal.trim() ? skills.personal : '',
+    };
+
+    // Combine all skills into one string
+    const allSkills = [
+      skillsData.employabilitySkills,
+      skillsData.softSkills,
+      skillsData.technicalSkills,
+      skillsData.personalSkills,
+    ]
+      .filter((category) => category) // Remove any empty categories
+      .join(', ');
+
+    const data = { skills: allSkills };
+
+    try {
+      const response = await fetch(`http://192.168.1.8:3000/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Skills updated successfully!');
+        navigation.navigate('CareerPathwaysScreen'); // Change to the appropriate next screen
+      } else {
+        Alert.alert('Error', 'Failed to update skills. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating skills:', error);
+      Alert.alert('Error', 'An error occurred. Please try again later.');
+    }
+  };
+
   const toggleSkill = (category, skill) => {
     setSkills((prevState) => ({
       ...prevState,
@@ -59,44 +115,6 @@ export default function SkillsScreen() {
         [skill]: !prevState[category][skill],
       },
     }));
-  };
-
-  const handleDone = async () => {
-    const studentId = await AsyncStorage.getItem('studentId');
-    const token = await AsyncStorage.getItem('accessToken');
-
-    if (!studentId || !token) {
-      Alert.alert('Error', 'Please log in again.');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Send the updated skills to the backend
-      const response = await axios.put(
-        `http://localhost:3000/students/${studentId}`, // Replace with your API endpoint
-        skills,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.data.success) {
-        // If successful, navigate to CareerPathwaysScreen
-        navigation.navigate('CareerPathwaysScreen', { studentId, token });
-      } else {
-        Alert.alert('Failed', 'Failed to update skills, please try again.');
-      }
-    } catch (error) {
-      console.error('Error updating skills:', error);
-      Alert.alert('Error', 'Error updating skills');
-    }
-
-    setIsLoading(false);
   };
 
   return (
@@ -213,7 +231,7 @@ export default function SkillsScreen() {
       {/* Done Button */}
       <TouchableOpacity
         style={styles.doneButton}
-        onPress={handleDone}
+        onPress={handleSubmit}
         disabled={isLoading}
       >
         <Text style={styles.doneButtonText}>
