@@ -11,6 +11,9 @@ import SkillsScreen from './screens/SkillsScreen';
 import CareerPathwaysScreen from './screens/CareerPathwaysScreen';
 import HighlightVideoScreen from './screens/HighlightVideoScreen';
 import ProfileImageScreen from './screens/ProfileImageScreen';
+import NotificationScreen from './screens/NotificationScreen';
+import MessageScreen from './screens/MessageScreen';
+import AccountSettingsScreen from './screens/AccountSettingsScreen';
 
 const Stack = createStackNavigator();
 
@@ -28,6 +31,9 @@ export default function App() {
         <Stack.Screen name="CareerPathwaysScreen" component={CareerPathwaysScreen} />
         <Stack.Screen name="HighlightVideoScreen" component={HighlightVideoScreen} />
         <Stack.Screen name="ProfileImageScreen" component={ProfileImageScreen} />
+        <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
+        <Stack.Screen name="MessageScreen" component={MessageScreen} />
+        <Stack.Screen name="AccountSettingsScreen" component={AccountSettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

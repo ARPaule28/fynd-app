@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform, StatusBar } from 'react-native';
+
 
 const HomeScreen = ({ navigation }) => {
   const [students, setStudents] = useState([]);
@@ -127,10 +129,10 @@ const HomeScreen = ({ navigation }) => {
         <TouchableOpacity>
           <Image source={require('../assets/home.png')} style={styles.footerIcon} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('MessageScreen')}>
           <Image source={require('../assets/message.png')} style={styles.footerIcon} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('NotificationScreen')}>
           <Image source={require('../assets/notification.png')} style={styles.footerIcon} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
@@ -150,14 +152,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20, // Add space for Android's status bar
+    paddingBottom: 20, // Ensure padding below
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    height: 100, // Explicit height for consistency
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1, // Allow profile container to shrink if needed
   },
   profileImage: {
     width: 40,
@@ -166,12 +172,14 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   profileName: {
-    fontSize: 18,
+    fontSize: 16, // Slightly smaller text for better fit
     fontWeight: 'bold',
+    flexShrink: 1, // Prevent overflow of text
   },
   logo: {
     width: 50,
     height: 50,
+    resizeMode: 'contain', // Prevent logo distortion
   },
   tabContainer: {
     flexDirection: 'row',

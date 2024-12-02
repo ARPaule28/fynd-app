@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Video } from 'expo-av';  // Importing Video component from expo-av
+import { Video } from 'expo-av'; // Importing Video component from expo-av
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform, StatusBar } from 'react-native';
 
 const ReadMorePage = ({ route }) => {
   const { studentId } = route.params; // Get the selected student's ID from route params
@@ -76,7 +77,7 @@ const ReadMorePage = ({ route }) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerName}>{student.name}</Text>
+        <Text style={styles.headerName}>{student.username}</Text>
       </View>
 
       {/* Scrollable Content */}
@@ -125,15 +126,15 @@ const ReadMorePage = ({ route }) => {
         <Text style={styles.bio}>{student.interest ? student.interest : 'No additional bio available.'}</Text>
       </ScrollView>
 
-      {/* Footer */}
+      {/* Footer Section */}
       <View style={styles.footer}>
         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.footerIcon} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('MessageScreen')}>
           <Image source={require('../assets/message.png')} style={styles.footerIcon} />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('NotificationScreen')}>
           <Image source={require('../assets/notification.png')} style={styles.footerIcon} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
@@ -148,32 +149,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    paddingBottom: 80, // Added bottom padding to prevent footer overlap
   },
   topHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 11,
-    paddingHorizontal: 20,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 95, // Increased height for the header
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-    paddingBottom: 10,
+    zIndex: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 0 : 20,
   },
   backButton: {
-    marginRight: 10,
+    position: 'absolute',
+    left: 15,
   },
   headerName: {
-    fontSize: 18,
+    fontSize: 20, // Increased font size for visibility
     fontWeight: 'bold',
     color: '#333',
+    textAlign: 'center',
+    marginLeft: 40,
+    lineHeight: 60,
   },
   scrollContainer: {
-    paddingBottom: 80, // Space for the footer
+    paddingTop: 120, // Adjusted to account for the increased header height
+    paddingBottom: 80, // Add space for the fixed footer
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   profileImage: {
     width: 80,
@@ -235,44 +258,32 @@ const styles = StyleSheet.create({
   },
   fullscreenVideo: {
     width: '100%',
-    height: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: 1,
-  },
-  fullscreenButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 10,
-    borderRadius: 50,
+    height: 300, // Adjust height for fullscreen video
   },
   bio: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    color: '#333',
     marginHorizontal: 20,
-    marginVertical: 10,
-    lineHeight: 20,
+    marginBottom: 30,
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    zIndex: 10,
   },
   footerIcon: {
-    width: 24,
-    height: 24,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
   },
 });
 
