@@ -94,7 +94,7 @@ export default function HighlightVideoScreen({ route }) {
       formData.append('file', file);
 
       // Use axios to send the POST request
-      const response = await axios.post('http://192.168.1.8:3000/students/upload-video-highlight', formData, {
+      const response = await axios.post('http://4.255.218.174/students/upload-video-highlight', formData, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'multipart/form-data',  // Set content type for file upload

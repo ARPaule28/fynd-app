@@ -47,7 +47,7 @@ export default function AdditionalInfoScreen({ navigation }) {
     };
 
     try {
-      const response = await fetch(`http://192.168.1.8:3000/students/${studentId}`, {
+      const response = await fetch(`http://4.255.218.174/students/${studentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

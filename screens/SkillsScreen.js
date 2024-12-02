@@ -59,7 +59,6 @@ export default function SkillsScreen() {
       return;
     }
 
-    // Concatenate all the selected skills into a single string
     const skillsData = {
       employabilitySkills: Object.keys(skills.employability)
         .filter((skill) => skills.employability[skill] && skill !== 'Others')
@@ -73,20 +72,19 @@ export default function SkillsScreen() {
       personalSkills: skills.personal.trim() ? skills.personal : '',
     };
 
-    // Combine all skills into one string
     const allSkills = [
       skillsData.employabilitySkills,
       skillsData.softSkills,
       skillsData.technicalSkills,
       skillsData.personalSkills,
     ]
-      .filter((category) => category) // Remove any empty categories
+      .filter((category) => category)
       .join(', ');
 
     const data = { skills: allSkills };
 
     try {
-      const response = await fetch(`http://192.168.1.8:3000/students/${studentId}`, {
+      const response = await fetch(`http://4.255.218.174/students/${studentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +95,7 @@ export default function SkillsScreen() {
 
       if (response.ok) {
         Alert.alert('Success', 'Skills updated successfully!');
-        navigation.navigate('CareerPathwaysScreen'); // Change to the appropriate next screen
+        navigation.navigate('CareerPathwaysScreen');
       } else {
         Alert.alert('Error', 'Failed to update skills. Please try again.');
       }
@@ -118,127 +116,124 @@ export default function SkillsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Skills</Text>
-
-      {/* Employability Skills */}
-      <Text style={styles.subtitle}>Employability Skills</Text>
-      <View style={styles.skillsContainer}>
-        {Object.keys(skills.employability).map((skill, index) =>
-          skill !== 'Others' ? (
-            <TouchableOpacity
-              key={index}
-              style={styles.skillItem}
-              onPress={() => toggleSkill('employability', skill)}
-            >
-              <Text style={styles.skillText}>
-                {skills.employability[skill] ? '☑' : '☐'} {skill}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TextInput
-              key={index}
-              style={styles.input}
-              placeholder="Others..."
-              value={skills.employability.Others}
-              onChangeText={(text) =>
-                setSkills((prevState) => ({
-                  ...prevState,
-                  employability: { ...prevState.employability, Others: text },
-                }))
-              }
-            />
-          )
-        )}
-      </View>
-
-      {/* Soft Skills */}
-      <Text style={styles.subtitle}>Soft Skills</Text>
-      <View style={styles.skillsContainer}>
-        {Object.keys(skills.soft).map((skill, index) =>
-          skill !== 'Others' ? (
-            <TouchableOpacity
-              key={index}
-              style={styles.skillItem}
-              onPress={() => toggleSkill('soft', skill)}
-            >
-              <Text style={styles.skillText}>
-                {skills.soft[skill] ? '☑' : '☐'} {skill}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TextInput
-              key={index}
-              style={styles.input}
-              placeholder="Others..."
-              value={skills.soft.Others}
-              onChangeText={(text) =>
-                setSkills((prevState) => ({
-                  ...prevState,
-                  soft: { ...prevState.soft, Others: text },
-                }))
-              }
-            />
-          )
-        )}
-      </View>
-
-      {/* Technical Skills */}
-      <Text style={styles.subtitle}>Technical Skills</Text>
-      <View style={styles.skillsContainer}>
-        {Object.keys(skills.technical).map((skill, index) =>
-          skill !== 'Others' ? (
-            <TouchableOpacity
-              key={index}
-              style={styles.skillItem}
-              onPress={() => toggleSkill('technical', skill)}
-            >
-              <Text style={styles.skillText}>
-                {skills.technical[skill] ? '☑' : '☐'} {skill}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TextInput
-              key={index}
-              style={styles.input}
-              placeholder="Others..."
-              value={skills.technical.Others}
-              onChangeText={(text) =>
-                setSkills((prevState) => ({
-                  ...prevState,
-                  technical: { ...prevState.technical, Others: text },
-                }))
-              }
-            />
-          )
-        )}
-      </View>
-
-      {/* Personal Skills */}
-      <Text style={styles.subtitle}>Personal Skills</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Your personal skills"
-        value={skills.personal}
-        onChangeText={(text) =>
-          setSkills((prevState) => ({
-            ...prevState,
-            personal: text,
-          }))
-        }
-      />
-
-      {/* Done Button */}
-      <TouchableOpacity
-        style={styles.doneButton}
-        onPress={handleSubmit}
-        disabled={isLoading}
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 80 }} // Add padding for button
       >
+        <Text style={styles.title}>Skills</Text>
+
+        <Text style={styles.subtitle}>Employability Skills</Text>
+        <View style={styles.skillsContainer}>
+          {Object.keys(skills.employability).map((skill, index) =>
+            skill !== 'Others' ? (
+              <TouchableOpacity
+                key={index}
+                style={styles.skillItem}
+                onPress={() => toggleSkill('employability', skill)}
+              >
+                <Text style={styles.skillText}>
+                  {skills.employability[skill] ? '☑' : '☐'} {skill}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TextInput
+                key={index}
+                style={styles.input}
+                placeholder="Others..."
+                value={skills.employability.Others}
+                onChangeText={(text) =>
+                  setSkills((prevState) => ({
+                    ...prevState,
+                    employability: { ...prevState.employability, Others: text },
+                  }))
+                }
+              />
+            )
+          )}
+        </View>
+
+        <Text style={styles.subtitle}>Soft Skills</Text>
+        <View style={styles.skillsContainer}>
+          {Object.keys(skills.soft).map((skill, index) =>
+            skill !== 'Others' ? (
+              <TouchableOpacity
+                key={index}
+                style={styles.skillItem}
+                onPress={() => toggleSkill('soft', skill)}
+              >
+                <Text style={styles.skillText}>
+                  {skills.soft[skill] ? '☑' : '☐'} {skill}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TextInput
+                key={index}
+                style={styles.input}
+                placeholder="Others..."
+                value={skills.soft.Others}
+                onChangeText={(text) =>
+                  setSkills((prevState) => ({
+                    ...prevState,
+                    soft: { ...prevState.soft, Others: text },
+                  }))
+                }
+              />
+            )
+          )}
+        </View>
+
+        <Text style={styles.subtitle}>Technical Skills</Text>
+        <View style={styles.skillsContainer}>
+          {Object.keys(skills.technical).map((skill, index) =>
+            skill !== 'Others' ? (
+              <TouchableOpacity
+                key={index}
+                style={styles.skillItem}
+                onPress={() => toggleSkill('technical', skill)}
+              >
+                <Text style={styles.skillText}>
+                  {skills.technical[skill] ? '☑' : '☐'} {skill}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TextInput
+                key={index}
+                style={styles.input}
+                placeholder="Others..."
+                value={skills.technical.Others}
+                onChangeText={(text) =>
+                  setSkills((prevState) => ({
+                    ...prevState,
+                    technical: { ...prevState.technical, Others: text },
+                  }))
+                }
+              />
+            )
+          )}
+        </View>
+
+        <Text style={styles.subtitle}>Personal Skills</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Your personal skills"
+          value={skills.personal}
+          onChangeText={(text) =>
+            setSkills((prevState) => ({
+              ...prevState,
+              personal: text,
+            }))
+          }
+        />
+      </ScrollView>
+
+      {/* Fixed Done Button */}
+      <TouchableOpacity style={styles.doneButton} onPress={handleSubmit}>
         <Text style={styles.doneButtonText}>
           {isLoading ? 'Updating...' : 'Next'}
         </Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -269,7 +264,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   doneButton: {
-    marginTop: 20,
+    position: 'absolute', // Fix the button to the bottom
+    bottom: 20,
+    left: 20,
+    right: 20,
     backgroundColor: '#4CAF50',
     paddingVertical: 12,
     borderRadius: 8,

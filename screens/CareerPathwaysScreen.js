@@ -132,37 +132,33 @@ export default function CareerPathwaysScreen() {
     }));
   };
 
-  // Handle submit action
   const handleSubmit = async () => {
     const studentId = await AsyncStorage.getItem('studentId');
     const accessToken = await AsyncStorage.getItem('accessToken');
-  
+
     if (!studentId || !accessToken) {
       Alert.alert('Error', 'Please log in again');
       return;
     }
-  
-    // Create an object to hold the selected career pathways
+
     const selectedCareerPathways = Object.keys(careerPathways).reduce((acc, category) => {
       const selectedOptions = Object.keys(careerPathways[category]).filter(
         (option) => careerPathways[category][option]
       );
       if (selectedOptions.length > 0) {
-        // Instead of storing an object, join the selected options into a comma-separated string
         acc[category] = selectedOptions.join(', ');
       }
       return acc;
     }, {});
-  
-    // Convert the selected career pathways into a simple string format, without curly braces
-    const formattedCareerPathways = Object.keys(selectedCareerPathways).map(category => {
-      return `${category}: ${selectedCareerPathways[category]}`;
-    }).join(' | '); // Joining each category's selected options with a separator (you can change ' | ' to any delimiter you prefer)
-  
-    const data = { careers: formattedCareerPathways }; // Use the formatted career pathways string
-  
+
+    const formattedCareerPathways = Object.keys(selectedCareerPathways)
+      .map((category) => `${category}: ${selectedCareerPathways[category]}`)
+      .join(' | ');
+
+    const data = { careers: formattedCareerPathways };
+
     try {
-      const response = await fetch(`http://192.168.1.8:3000/students/${studentId}`, {
+      const response = await fetch(`http://4.255.218.174/students/${studentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -170,60 +166,53 @@ export default function CareerPathwaysScreen() {
         },
         body: JSON.stringify(data),
       });
-  
+
       if (response.ok) {
         const result = await response.json();
-        console.log('API response:', result); // Log the result to check its structure
-  
-        // Assuming the API is not sending a "success" field, we can proceed with navigation directly
-        // Here we assume the response data is valid if the status is ok
-        if (result.id) {  // Check if result contains an ID (indicating success)
-          Alert.alert('Success', 'Career pathways updated successfully!');
-          console.log('Navigating to HomeScreen...');
-          navigation.navigate('HighlightVideoScreen');
-        } else {
-          Alert.alert('Error', 'Failed to update career pathways, please try again.');
-        }
+        Alert.alert('Success', 'Career pathways updated successfully!');
+        navigation.navigate('HighlightVideoScreen');
       } else {
         const errorResponse = await response.json();
-        console.log('Error response:', errorResponse);  // Log the error response
         Alert.alert('Error', errorResponse.message || 'Something went wrong.');
-      }      
+      }
     } catch (error) {
-      console.error('Error updating career pathways:', error);
       Alert.alert('Error', 'An error occurred while updating career pathways.');
     }
   };
-  
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Career Pathways</Text>
+    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 30 }} // Add padding at the bottom
+      >
+        <Text style={styles.title}>Career Pathways</Text>
 
-      {Object.keys(careerPathways).map((category) => (
-        <View key={category}>
-          <Text style={styles.subtitle}>{category}</Text>
-          <View style={styles.skillsContainer}>
-            {Object.keys(careerPathways[category]).map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.skillItem}
-                onPress={() => toggleOption(category, option)}
-              >
-                <Text style={styles.skillText}>
-                  {careerPathways[category][option] ? '☑' : '☐'} {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
+        {Object.keys(careerPathways).map((category) => (
+          <View key={category}>
+            <Text style={styles.subtitle}>{category}</Text>
+            <View style={styles.skillsContainer}>
+              {Object.keys(careerPathways[category]).map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.skillItem}
+                  onPress={() => toggleOption(category, option)}
+                >
+                  <Text style={styles.skillText}>
+                    {careerPathways[category][option] ? '☑' : '☐'} {option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
-      ))}
+        ))}
+      </ScrollView>
 
-      {/* Done Button */}
+      {/* Fixed Done Button */}
       <TouchableOpacity style={styles.doneButton} onPress={handleSubmit}>
         <Text style={styles.doneButtonText}>Next</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -264,7 +253,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   doneButton: {
-    marginTop: 20,
+    position: 'absolute', // Fix position at the bottom
+    bottom: 20,
+    left: 20,
+    right: 20,
     backgroundColor: '#4CAF50',
     paddingVertical: 12,
     borderRadius: 8,

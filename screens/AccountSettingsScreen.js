@@ -40,7 +40,7 @@ const AccountSettingsScreen = () => {
         }
 
         const currentStudentResponse = await axios.get(
-          `http://192.168.1.8:3000/students/${studentId}`,
+          `http://4.255.218.174/students/${studentId}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

@@ -23,7 +23,7 @@ const HomeScreen = ({ navigation }) => {
         }
 
         // Fetch all students
-        const response = await axios.get('http://192.168.1.8:3000/students', {
+        const response = await axios.get('http://4.255.218.174/students', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -31,7 +31,7 @@ const HomeScreen = ({ navigation }) => {
         setStudents(response.data);
 
         // Fetch the current logged-in student info using the studentId
-        const currentStudentResponse = await axios.get(`http://192.168.1.8:3000/students/${studentId}`, {
+        const currentStudentResponse = await axios.get(`http://4.255.218.174/students/${studentId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

@@ -21,7 +21,7 @@ const NotificationScreen = ({ navigation }) => {
         }
 
         // Placeholder: Fetch notifications or simulate empty list
-        // const response = await axios.get('http://192.168.1.8:3000/notifications', {
+        // const response = await axios.get('http://4.255.218.174/notifications', {
         //   headers: {
         //     Authorization: `Bearer ${accessToken}`,
         //   },
@@ -29,7 +29,7 @@ const NotificationScreen = ({ navigation }) => {
         // setNotifications(response.data || []);
 
         // Fetch current student for profile display
-        const currentStudentResponse = await axios.get(`http://192.168.1.8:3000/students/${studentId}`, {
+        const currentStudentResponse = await axios.get(`http://4.255.218.174/students/${studentId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
