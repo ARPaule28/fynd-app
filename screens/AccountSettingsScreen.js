@@ -15,7 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import { Video } from 'expo-av';
 import axios from 'axios';
 
 const AccountSettingsScreen = () => {
@@ -27,6 +27,7 @@ const AccountSettingsScreen = () => {
   const [videoUri, setVideoUri] = useState(null);
   const [editableEmail, setEditableEmail] = useState('');
   const [loading, setLoading] = useState(true);
+  const [paused, setPaused] = useState(true);
 
   useEffect(() => {
     const fetchStudentDetails = async () => {
@@ -69,43 +70,99 @@ const AccountSettingsScreen = () => {
   }, []);
 
   const handleProfileImageUpload = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    });
-
-    if (!result.cancelled) {
-      setProfileImageUri(result.uri);
-      Alert.alert('Profile picture updated successfully!');
-    }
+    navigation.navigate('UpdateProfileScreen');
   };
 
   const handleReelVideoUpload = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: 'video/*',
-    });
-
-    if (result.type === 'success') {
-      setVideoUri(result.uri);
-      console.log('Video URI:', result.uri); // Debugging: Ensure the video URI is set
-      Alert.alert('Video uploaded successfully!');
-    }
+    navigation.navigate('UpdateVideoScreen');
   };
 
-  const handlePasswordUpdate = () => {
+  const handlePasswordUpdate = async () => {
     if (!currentPassword || !newPassword) {
       Alert.alert('Error', 'Please fill in both password fields.');
       return;
     }
-    Alert.alert('Success', 'Password updated successfully!');
-  };
+  
+    try {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const studentId = await AsyncStorage.getItem('studentId');
+  
+      if (!accessToken || !studentId) {
+        Alert.alert('Error', 'Authentication error. Please log in again.');
+        navigation.navigate('Login');
+        return;
+      }
+  
+      const data = {
+        currentPassword,
+        newPassword,
+      };
+  
+      const response = await fetch(`http://4.255.218.174/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to update password.');
+        return;
+      }
+  
+      Alert.alert('Success', 'Password updated successfully!');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      Alert.alert('Error', 'An unexpected error occurred.');
+    }
+  };  
 
-  const handleEmailUpdate = () => {
+  const handleEmailUpdate = async () => {
     if (!editableEmail) {
       Alert.alert('Error', 'Please enter a valid email.');
       return;
     }
-    Alert.alert('Success', 'Email updated successfully!');
-  };
+  
+    try {
+      const accessToken = await AsyncStorage.getItem('accessToken');
+      const studentId = await AsyncStorage.getItem('studentId');
+  
+      if (!accessToken || !studentId) {
+        Alert.alert('Error', 'Authentication error. Please log in again.');
+        navigation.navigate('Login');
+        return;
+      }
+  
+      const data = {
+        email: editableEmail,
+      };
+  
+      const response = await fetch(`http://4.255.218.174/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.message || 'Failed to update email.');
+        return;
+      }
+  
+      Alert.alert('Success', 'Email updated successfully!');
+    } catch (error) {
+      console.error('Error updating email:', error);
+      Alert.alert('Error', 'An unexpected error occurred.');
+    }
+  };  
+
+  const togglePlayPause = () => setPaused((prev) => !prev);
 
   if (loading) {
     return (
@@ -171,23 +228,35 @@ const AccountSettingsScreen = () => {
         </View>
 
         <View style={styles.card}>
-            <Text style={styles.label}>Reel Video</Text>
-            <TouchableOpacity style={styles.uploadBox} onPress={handleReelVideoUpload}>
-                <Text style={styles.uploadText}>
-                {videoUri ? 'Video Selected' : 'Upload a File (MP4)'}
-                </Text>
-            </TouchableOpacity>
-            {videoUri && (
-                <View style={{ alignItems: 'center', marginTop: 10 }}>
-                <Text style={{ color: '#007BFF', fontWeight: 'bold' }}>Selected Video:</Text>
-                <Text style={{ color: '#555' }}>{videoUri.split('/').pop()}</Text>
-                <TouchableOpacity style={styles.updateButton} onPress={handleReelVideoUpload}>
-                    <Text style={styles.updateButtonText}>Update Video</Text>
-                </TouchableOpacity>
-                </View>
-            )}
+          <Text style={styles.label}>Reel Video</Text>
+          {currentStudent?.video_highlight ? (
+            <View>
+              <TouchableOpacity onPress={togglePlayPause} style={styles.videoContainer}>
+                <Video
+                  source={{ uri: currentStudent.video_highlight }}
+                  style={styles.videoImage}
+                  useNativeControls={true}
+                  resizeMode="contain"
+                  isPaused={paused}
+                  onPlaybackStatusUpdate={(status) => {
+                    if (status.didJustFinish) {
+                      setPaused(true);
+                    }
+                  }}
+                />
+              </TouchableOpacity>
             </View>
-
+          ) : (
+            <TouchableOpacity style={styles.uploadBox} onPress={handleReelVideoUpload}>
+              <Text style={styles.uploadText}>
+                {videoUri ? 'Video Selected' : 'Upload a File (MP4)'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.updateButton} onPress={handleReelVideoUpload}>
+            <Text style={styles.updateButtonText}>Upload New Video</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -257,6 +326,15 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
     backgroundColor: '#f9f9f9',
+  },
+  videoContainer: {
+    width: '100%',
+    height: 200,
+  },
+  videoImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
   },
   uploadBox: {
     height: 100,

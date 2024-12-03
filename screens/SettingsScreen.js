@@ -79,7 +79,7 @@ const SettingsScreen = ({ navigation }) => {
       <View style={styles.settingsContainer}>
         <TouchableOpacity
           style={styles.option}
-          onPress={() => navigation.navigate('Profile')}
+          onPress={() => navigation.navigate('ProfileScreen')}
         >
           <Icon name="user" size={20} color="#666" />
           <Text style={styles.optionText}>My Profile</Text>

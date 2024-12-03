@@ -14,6 +14,11 @@ import ProfileImageScreen from './screens/ProfileImageScreen';
 import NotificationScreen from './screens/NotificationScreen';
 import MessageScreen from './screens/MessageScreen';
 import AccountSettingsScreen from './screens/AccountSettingsScreen';
+import UpdateProfileScreen from './screens/UpdateProfileScreen';
+import UpdateVideoScreen from './screens/UpdateVideoScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import UpdateInfoScreen from './screens/UpdateInfoScreen';
+import UpdateSkillsScreen from './screens/UpdateSkillsScreen';
 
 const Stack = createStackNavigator();
 
@@ -34,6 +39,11 @@ export default function App() {
         <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
         <Stack.Screen name="MessageScreen" component={MessageScreen} />
         <Stack.Screen name="AccountSettingsScreen" component={AccountSettingsScreen} />
+        <Stack.Screen name="UpdateProfileScreen" component={UpdateProfileScreen} />
+        <Stack.Screen name="UpdateVideoScreen" component={UpdateVideoScreen} />
+        <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+        <Stack.Screen name="UpdateInfoScreen" component={UpdateInfoScreen} />
+        <Stack.Screen name="UpdateSkillsScreen" component={UpdateSkillsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

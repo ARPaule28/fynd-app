@@ -3,20 +3,20 @@ import { StyleSheet, Text, View, ScrollView, ActivityIndicator, Image, Touchable
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, StatusBar } from 'react-native';
-
+import { Video } from 'expo-av'; // Importing Video component from expo-av
 
 const HomeScreen = ({ navigation }) => {
   const [students, setStudents] = useState([]);
   const [currentStudent, setCurrentStudent] = useState(null); // State for the logged-in student
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('Newest Account');
+  const [activeTab, setActiveTab] = useState('Newest Account'); // Default tab is 'Newest Account'
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const accessToken = await AsyncStorage.getItem('accessToken');
         const studentId = await AsyncStorage.getItem('studentId'); // Fetch studentId from AsyncStorage
-        
+
         if (!accessToken || !studentId) {
           navigation.navigate('Login'); // Redirect to login if not authenticated
           return;
@@ -37,7 +37,6 @@ const HomeScreen = ({ navigation }) => {
           },
         });
         setCurrentStudent(currentStudentResponse.data);
-
       } catch (error) {
         console.error('Error fetching data:', error);
         if (error.response?.status === 401 || error.response?.status === 403) {
@@ -59,6 +58,61 @@ const HomeScreen = ({ navigation }) => {
     );
   }
 
+  const renderYourOverview = () => {
+    if (!currentStudent) {
+      return <Text>No student data available</Text>;
+    }
+  
+    return (
+      <View style={styles.overviewContainer}>
+        {/* Profile Image and Name */}
+        <View style={styles.profileHeader}>
+          <Image
+            source={{ uri: currentStudent?.profile_image || 'https://via.placeholder.com/150' }}
+            style={styles.overviewImage}
+          />
+          <View style={styles.profileText}>
+            <Text style={styles.overviewName}>{currentStudent.name}</Text>
+            <Text style={styles.overviewTitle}>Careers: {currentStudent.careers || 'No career specified'}</Text>
+            <Text style={styles.overviewTitle}>
+              Address: {currentStudent.address || 'No address provided'}
+            </Text>
+          </View>
+        </View>
+  
+        {/* Skills, Nationality, and Other Info */}
+        <View style={styles.additionalInfo}>
+          <Text style={styles.overviewSkills}>Skills: {currentStudent.skills || 'N/A'}</Text>
+          <Text style={styles.overviewTitle}>
+            Nationality: {currentStudent.race || 'Not specified'}
+          </Text>
+        </View>
+  
+        {/* Video Highlight */}
+        <View style={styles.videoContainer}>
+          {currentStudent.video_highlight ? (
+            <Video
+              source={{ uri: currentStudent.video_highlight }}
+              style={styles.videoPlayer}
+              controls
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.placeholderContainer}>
+              <Text style={styles.placeholderText}>No video highlight available</Text>
+            </View>
+          )}
+        </View>
+  
+        {/* Bio or Description */}
+        <Text style={styles.overviewDescription}>
+          {currentStudent.interest || 'This student has not added a bio yet.'}
+        </Text>
+      </View>
+    );
+  };
+  
+
   return (
     <View style={styles.container}>
       {/* Header Section */}
@@ -76,10 +130,7 @@ const HomeScreen = ({ navigation }) => {
             </>
           )}
         </View>
-        <Image
-          source={require('../assets/logo.png')}
-          style={styles.logo}
-        />
+        <Image source={require('../assets/logo.png')} style={styles.logo} />
       </View>
 
       {/* Tab Navigation */}
@@ -101,44 +152,34 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Students List */}
+      {/* Content Based on Active Tab */}
       <ScrollView style={styles.scrollContainer}>
-        <Text style={styles.sectionTitle}>New Students</Text>
-        {students.map((student) => (
-          <View key={student.id} style={styles.studentCard}>
-            <View style={styles.studentInfo}>
-              <Image source={{ uri: student.profile_image }} style={styles.studentProfileImage} />
-              <View style={styles.studentDetails}>
-                <Text style={styles.studentName}>{student.name}</Text>
-                <Text style={styles.studentTitle}>{student.title}</Text>
-                <Text style={styles.studentDescription}>
-                  {student.interest ? student.interest : 'No description available.'}
-                </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('ReadMorePage', { studentId: student.id })}>
-                  <Text style={styles.readMore}>READ MORE</Text>
-                </TouchableOpacity>
+        {activeTab === 'Newest Account' &&
+          students.map((student) => (
+            <View key={student.id} style={styles.studentCard}>
+              <View style={styles.studentInfo}>
+                <Image
+                  source={{ uri: student.profile_image || 'https://via.placeholder.com/150' }}
+                  style={styles.studentProfileImage}
+                />
+                <View style={styles.studentDetails}>
+                  <Text style={styles.studentName}>{student.name}</Text>
+                  <Text style={styles.studentTitle}>{student.title}</Text>
+                  <Text style={styles.studentDescription}>
+                    {student.interest ? student.interest : 'No description available.'}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('ReadMorePage', { studentId: student.id })}
+                  >
+                    <Text style={styles.readMore}>READ MORE</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
+              <Text style={styles.timestamp}>{student.registration_date}</Text>
             </View>
-            <Text style={styles.timestamp}>{student.registration_date}</Text>
-          </View>
-        ))}
+          ))}
+        {activeTab === 'Your Overview' && renderYourOverview()}
       </ScrollView>
-
-      {/* Footer Navigation */}
-      <View style={styles.footer}>
-        <TouchableOpacity>
-          <Image source={require('../assets/home.png')} style={styles.footerIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('MessageScreen')}>
-          <Image source={require('../assets/message.png')} style={styles.footerIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('NotificationScreen')}>
-          <Image source={require('../assets/notification.png')} style={styles.footerIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Image source={require('../assets/settings.png')} style={styles.footerIcon} />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -269,6 +310,76 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  overviewContainer: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    margin: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  overviewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 15,
+  },
+  profileText: {
+    flex: 1,
+  },
+  overviewName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  overviewTitle: {
+    fontSize: 14,
+    color: '#555',
+  },
+  overviewSubtitle: {
+    fontSize: 12,
+    color: '#888',
+  },
+  additionalInfo: {
+    marginTop: 10,
+  },
+  overviewSkills: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  videoContainer: {
+    marginTop: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  videoPlayer: {
+    width: '100%',
+    height: 200,
+  },
+  placeholderContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 200,
+    backgroundColor: '#f0f0f0',
+  },
+  placeholderText: {
+    color: '#888',
+  },
+  overviewDescription: {
+    marginTop: 15,
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+  },
+  
 });
 
 export default HomeScreen;
