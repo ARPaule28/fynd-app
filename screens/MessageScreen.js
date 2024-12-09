@@ -24,7 +24,7 @@ const MessageScreen = ({ navigation }) => {
         setMessages([]);
 
         // Fetch the current logged-in student's info
-        const currentStudentResponse = await axios.get(`http://4.255.218.174/students/${studentId}`, {
+        const currentStudentResponse = await axios.get(`https://fyndapi.westcentralus.cloudapp.azure.com/students/${studentId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

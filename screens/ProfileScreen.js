@@ -29,7 +29,7 @@ const ProfileScreen = ({ navigation }) => {
           return;
         }
 
-        const response = await axios.get(`http://4.255.218.174/students/${studentId}`, {
+        const response = await axios.get(`https://fyndapi.westcentralus.cloudapp.azure.com/students/${studentId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

@@ -21,7 +21,7 @@ const NotificationScreen = ({ navigation }) => {
         }
 
         // Placeholder: Fetch notifications or simulate empty list
-        // const response = await axios.get('http://4.255.218.174/notifications', {
+        // const response = await axios.get('https://fyndapi.westcentralus.cloudapp.azure.com/notifications', {
         //   headers: {
         //     Authorization: `Bearer ${accessToken}`,
         //   },
@@ -29,7 +29,7 @@ const NotificationScreen = ({ navigation }) => {
         // setNotifications(response.data || []);
 
         // Fetch current student for profile display
-        const currentStudentResponse = await axios.get(`http://4.255.218.174/students/${studentId}`, {
+        const currentStudentResponse = await axios.get(`https://fyndapi.westcentralus.cloudapp.azure.com/students/${studentId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

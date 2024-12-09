@@ -47,7 +47,7 @@ export default function UpdateProfileScreen() {
 
       formData.append('file', file);
 
-      const response = await axios.post('http://4.255.218.174/students/upload-profile-image', formData, {
+      const response = await axios.post('https://fyndapi.westcentralus.cloudapp.azure.com/students/upload-profile-image', formData, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'multipart/form-data',

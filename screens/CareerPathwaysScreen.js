@@ -158,7 +158,7 @@ export default function CareerPathwaysScreen() {
     const data = { careers: formattedCareerPathways };
 
     try {
-      const response = await fetch(`http://4.255.218.174/students/${studentId}`, {
+      const response = await fetch(`https://fyndapi.westcentralus.cloudapp.azure.com/students/${studentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

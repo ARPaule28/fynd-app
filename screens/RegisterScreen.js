@@ -16,7 +16,7 @@ export default function RegisterScreen() {
     }
 
     try {
-      const response = await axios.post('http://4.255.218.174/students/', {
+      const response = await axios.post('https://fyndapi.westcentralus.cloudapp.azure.com/students/', {
         name: data.name,
         username: data.username,
         email: data.email,

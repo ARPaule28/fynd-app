@@ -11,7 +11,7 @@ export default function LoginScreen() {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post('http://4.255.218.174/auth/login', {
+      const response = await axios.post('https://fyndapi.westcentralus.cloudapp.azure.com/auth/login', {
         email: data.email,
         password: data.password,
       });

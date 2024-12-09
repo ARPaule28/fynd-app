@@ -94,7 +94,7 @@ export default function UpdateVideoScreen({ route }) {
       formData.append('file', file);
 
       // Use axios to send the POST request
-      const response = await axios.post('http://4.255.218.174/students/upload-video-highlight', formData, {
+      const response = await axios.post('https://fyndapi.westcentralus.cloudapp.azure.com/students/upload-video-highlight', formData, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'multipart/form-data',  // Set content type for file upload
