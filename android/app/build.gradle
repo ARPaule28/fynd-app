@@ -109,7 +109,8 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.fyndapp"
+    namespace "com.arpaule28.fyndapp"
+    
     defaultConfig {
         applicationId 'com.arpaule28.fyndapp'
         minSdkVersion rootProject.ext.minSdkVersion

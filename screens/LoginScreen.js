@@ -1,9 +1,9 @@
-import React from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Alert, Image } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
+import { Alert, Text, TextInput, View, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useForm, Controller } from 'react-hook-form';
+import RNSslPinning from 'react-native-ssl-pinning';
 
 export default function LoginScreen() {
   const { control, handleSubmit, formState: { errors } } = useForm();
@@ -11,19 +11,27 @@ export default function LoginScreen() {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post('https://fyndapi.westcentralus.cloudapp.azure.com/auth/login', {
-        email: data.email,
-        password: data.password,
-      });
-  
+      // Axios configuration with SSL pinning for self-signed certificates
+      const response = await axios.post(
+        'https://fyndapi.westcentralus.cloudapp.azure.com/auth/login',
+        { email: data.email, password: data.password },
+        {
+          // This is the key part where SSL pinning is enabled for the request
+          httpsAgent: new RNSslPinning({ 
+            certs: ['cert/FYND APP.crt'], // Provide the path to your self-signed cert
+            disableSslVerification: true, // Disable SSL verification
+          }),
+        }
+      );
+
       if (response.data) {
         Alert.alert('Login Successful', `Welcome ${data.email}`);
         const { accessToken, hasAdditionalInfo, user } = response.data;
         const studentId = user.student;  // Extract studentId from the user object
-  
+
         await AsyncStorage.setItem('accessToken', accessToken);
         await AsyncStorage.setItem('studentId', studentId.toString()); // Ensure studentId is stored as a string
-  
+
         // Navigate based on the additional info status
         if (hasAdditionalInfo) {
           navigation.navigate('Home', { studentId }); // Pass studentId to Home
@@ -32,11 +40,10 @@ export default function LoginScreen() {
         }
       }
     } catch (error) {
+      console.error(error); // Log detailed error for debugging
       Alert.alert('Login Failed', 'Invalid credentials or server error');
     }
   };
-  
-  
 
   return (
     <View style={styles.container}>
